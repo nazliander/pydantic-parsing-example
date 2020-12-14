@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  database:
+    image: mongo:latest
+    container_name: mongo_db
+    environment:
+      - MONGO_INITDB_DATABASE=donki
+      - MONGODB_DATA_DIR=/data/db
+      - MONDODB_LOG_DIR=/dev/null
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo-volume:/data/db
