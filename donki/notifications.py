@@ -2,7 +2,7 @@ from datetime import datetime
 import requests
 from typing import List
 
-from donki.models import NotificationMessageBody
+from donki.models import NotificationMessageBody, NotificationMessage
 
 
 class NotificationParser:
@@ -15,12 +15,11 @@ class NotificationParser:
         self.now = datetime.utcnow()
 
     def _seperate_message_parts(self, notification: dict) -> list:
-        message_parts = []
-        message_parts.append(
-            f"message_type_abbreviation : {notification['messageType']}")
-        message_parts.append(f"message_url : {notification['messageURL']}")
-        message_parts.extend(notification["messageBody"].split("\n##"))
-        return message_parts
+        return [
+            f"message_type_abbreviation : {notification['messageType']}",
+            f"message_url : {notification['messageURL']}",
+            f"message_body : {notification['messageBody']}"
+        ]
 
     def _exclude_small_messages(self, message_part: str) -> bool:
         return len(message_part) > 2
@@ -51,6 +50,23 @@ class NotificationParser:
         except Exception as e:
             return None
 
+    def _message_body_parser(self,
+                             message_body_list: List[str]) -> dict:
+        message_dict = {}
+        for message_text in message_body_list:
+            message_pair = message_text.split(":", 1)
+            if len(message_pair) >= 2:
+                parsed_key = self._key_parse(message_pair[0])
+                if parsed_key == "message_issue_date":
+                    message_dict[parsed_key] = self._exclude_certain_chars(
+                        ":".join(message_pair[1:])
+                        .replace("T", " ")
+                        .replace("Z", ""))
+                    continue
+                message_dict[parsed_key] = self._exclude_certain_chars(
+                    " ".join(message_pair[1:]).strip())
+        return NotificationMessageBody(**message_dict)
+
     def create_message_dictionary(self) -> List[dict]:
 
         notifications = self._request_donki_notifications()
@@ -68,16 +84,14 @@ class NotificationParser:
                 message_pair = message_text.split(":", 1)
                 if len(message_pair) >= 2:
                     parsed_key = self._key_parse(message_pair[0])
-                    if parsed_key == "message_issue_date":
-                        message_dict[parsed_key] = self._exclude_certain_chars(
-                            ":".join(message_pair[1:])
-                            .replace("T", " ")
-                            .replace("Z", ""))
+                    if parsed_key == "message_body":
+                        message_dict[parsed_key] = self._message_body_parser(
+                            " ".join(message_pair[1:]).strip().split('\n##'))
                         continue
                     message_dict[parsed_key] = self._exclude_certain_chars(
                         " ".join(message_pair[1:]).strip())
 
             message_list_of_dict.append(
-                NotificationMessageBody(**message_dict))
+                NotificationMessage(**message_dict))
 
         return message_list_of_dict
