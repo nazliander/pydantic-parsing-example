@@ -17,15 +17,19 @@ class MessageTypeAbbreviationEnum(str, Enum):
 
 
 class NotificationMessageBody(BaseModel):
-    insertion_date: datetime
-    message_type_abbreviation: MessageTypeAbbreviationEnum
-    message_url: HttpUrl
     message_type: str
     message_issue_date: datetime
     message_id: str
     disclaimer: Optional[str]
     summary: Optional[str]
     notes: Optional[str]
+
+
+class NotificationMessage(BaseModel):
+    insertion_date: datetime
+    message_type_abbreviation: MessageTypeAbbreviationEnum
+    message_url: HttpUrl
+    message_body: NotificationMessageBody
 
     class Config:
         json_encoders = {

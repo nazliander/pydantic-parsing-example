@@ -41,6 +41,7 @@ if __name__ == "__main__":
     )
 
     notifications = donki_parser.create_message_dictionary()
+
     notifications_as_dict = list(map(lambda n: n.dict(), notifications))
 
     notifications_repository = NotificationsRepository(
